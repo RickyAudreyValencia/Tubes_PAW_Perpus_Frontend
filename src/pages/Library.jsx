@@ -1,20 +1,21 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react'
+import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react'
+import { fetchEvents } from '../services/api'; // Mengubah path import
+// Catatan: Nama fungsi fetchEvents seharusnya fetchBooks, tapi saya akan mengikuti nama yang Anda berikan.
 
 const placeholder = 'https://via.placeholder.com/360x220?text=No+Image'
 
-const SAMPLE_BOOKS = [
-  { id: 1, title: 'Islamic Civilization History', author: 'Dr. Badri Yatim', year: 2000, pages: 312, isbn: '978-1111111111', category: 'History', status: 'Borrowed', rating: 4.5, reads: 980, img: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80' },
-  { id: 2, title: 'The Smart Rabbit', author: 'Kusumo Priyanto', year: 2015, pages: 48, isbn: '978-2222222222', category: 'Children', status: 'Available', rating: 4.8, reads: 3400, img: 'https://images.unsplash.com/photo-1528207776546-365bb710ee93?auto=format&fit=crop&w=800&q=80', summary: 'A classic Indonesian tale about the cleverness of a rabbit.' },
-  { id: 3, title: 'Steve Jobs', author: 'Walter Isaacson', year: 2011, pages: 656, isbn: '978-3333333333', category: 'Biography', status: 'Available', rating: 4.8, reads: 4700, img: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=800&q=80', summary: 'The official biography of the founder of Apple Inc.' },
-  { id: 4, title: 'Perahu Kertas', author: 'Dewi Lestari', year: 2005, pages: 312, isbn: '978-1234567890', category: 'Fiction', status: 'Available', rating: 4.2, reads: 1200, img: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=800&q=80', summary: 'A touching modern Indonesian novel about love and ambition.' },
-  { id: 5, title: 'Belajar React', author: 'Andi Susanto', year: 2021, pages: 256, isbn: '978-0987654321', category: 'Technology', status: 'Available', rating: 4.1, reads: 800, img: 'https://images.unsplash.com/photo-1526378727007-2d4b7f9d9a1b?auto=format&fit=crop&w=800&q=80', summary: 'A hands-on guide to building React apps for beginners.' },
-  { id: 6, title: 'JavaScript Modern', author: 'Budi Santoso', year: 2019, pages: 480, isbn: '978-1122334455', category: 'Technology', status: 'Available', rating: 4.6, reads: 2200, img: 'https://images.unsplash.com/photo-1516979187457-637abb4f9353?auto=format&fit=crop&w=800&q=80', summary: 'Modern patterns and practices for JavaScript developers.' },
-  { id: 7, title: 'Desain Web', author: 'Siti Rahma', year: 2018, pages: 200, isbn: '978-6677889900', category: 'Technology', status: 'Available', rating: 4.0, reads: 600, img: 'https://images.unsplash.com/photo-1492724441997-5dc865305da7?auto=format&fit=crop&w=800&q=80', summary: 'Practical principles for designing usable web interfaces.' },
-  { id: 8, title: 'Child Tales', author: 'Anna Nur', year: 2017, pages: 120, isbn: '978-4444444444', category: 'Children', status: 'Available', rating: 4.3, reads: 1500, img: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80', summary: 'A collection of short moral tales for children.' },
-  { id: 9, title: 'World History', author: 'M. Hidayat', year: 2010, pages: 420, isbn: '978-5555555555', category: 'History', status: 'Available', rating: 4.4, reads: 2100, img: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=800&q=80', summary: 'A survey of major events that shaped the modern world.' },
-]
+// Hapus SAMPLE_BOOKS karena data akan diambil dari backend
+// const SAMPLE_BOOKS = [...] 
 
 const CATEGORIES = ['All','Fiction','Non-Fiction','Technology','History','Biography','Children']
+const CATEGORY_MAP = { // Peta Kategori untuk penamaan di frontend
+    'History': 'History', 
+    'Children': 'Children', 
+    'Biography': 'Biography', 
+    'Fiction': 'Fiction', 
+    'Technology': 'Technology',
+    // Tambahkan kategori lain sesuai data backend jika namanya berbeda
+}
 
 export default function Library() {
   const [query, setQuery] = useState('')
@@ -27,20 +28,82 @@ export default function Library() {
   const perPage = 6
   const filterRef = useRef(null)
 
+  // State baru untuk menyimpan semua data buku dari backend
+  const [allBooks, setAllBooks] = useState([]) 
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+  
+  // Fungsi untuk memetakan data dari format backend ke format frontend (SAMPLE_BOOKS)
+  const mapBackendData = useCallback((data) => {
+    // Asumsi data backend: judul, penulis, tahun, status, deskripsi, gambar, kategori.nama
+    return data.map(buku => ({
+      id: buku.id,
+      title: buku.judul || 'No Title',
+      author: buku.penulis || 'Unknown Author',
+      year: buku.tahun || 0,
+      pages: buku.halaman || 0, // Menggunakan properti 'halaman' jika ada
+      isbn: buku.isbn || 'N/A', 
+      // Asumsi kategori datang dari relasi 'kategori' dan memiliki properti 'nama'
+      category: buku.kategori?.nama || 'Non-Fiction', 
+      status: buku.status || 'Available', 
+      rating: buku.rating || 0, // Menggunakan properti 'rating' jika ada
+      reads: buku.dibaca || 0, // Menggunakan properti 'dibaca' jika ada
+      img: buku.gambar || placeholder, // Menggunakan properti 'gambar'
+      summary: buku.deskripsi || 'No description available.',
+    }));
+  }, [])
+  
+  // Fungsi untuk mengambil data dari API
+  const fetchAllBooks = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Panggil fungsi API. Asumsi fetchEvents mengembalikan SEMUA buku
+      const responseData = await fetchEvents()
+      
+      // Karena backend menggunakan pagination, data yang sebenarnya ada di responseData.data
+      // Jika API Anda dimodifikasi untuk mengembalikan SEMUA data, 
+      // mungkin Anda hanya perlu responseData
+      const rawBooks = Array.isArray(responseData.data) ? responseData.data : (Array.isArray(responseData) ? responseData : [])
+
+      const mappedBooks = mapBackendData(rawBooks)
+      setAllBooks(mappedBooks)
+      setIsLoading(false)
+    } catch (err) {
+      console.error('Gagal memuat buku:', err)
+      setError(`Gagal memuat data buku: ${err.message}.`)
+      setIsLoading(false)
+      setAllBooks([])
+    }
+  }, [mapBackendData]) // Dependensi mapBackendData
+
+  useEffect(() => {
+    fetchAllBooks()
+  }, [fetchAllBooks])
+
   const filtersActive = availability !== 'All' || minRating > 0
+  
+  // Logika filtering/sorting/pagination LOKAL tetap sama, tapi menggunakan 'allBooks'
   const filtered = useMemo(()=>{
-    let list = SAMPLE_BOOKS.slice()
+    // List awal adalah SEMUA buku yang diambil dari backend
+    let list = allBooks.slice() 
+    
     if (query.trim()) {
       const q = query.toLowerCase()
       list = list.filter(b => b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q) || b.category.toLowerCase().includes(q))
     }
-    if (category !== 'All') list = list.filter(b => b.category === category)
-    if (sortBy === 'Popular') list.sort((a,b)=> b.reads - a.reads)
-    if (sortBy === 'Newest') list.sort((a,b)=> b.year - a.year)
+    if (category !== 'All') {
+        // Filter berdasarkan kategori yang sudah di-map ke frontend
+        list = list.filter(b => CATEGORY_MAP[b.category] === category) 
+    }
+    if (sortBy === 'Popular') list.sort((a,b)=> (b.reads || 0) - (a.reads || 0))
+    if (sortBy === 'Newest') list.sort((a,b)=> (b.year || 0) - (a.year || 0))
     if (availability && availability !== 'All') list = list.filter(b=> b.status === availability)
     if (minRating > 0) list = list.filter(b => (b.rating || 0) >= minRating)
+    
     return list
-  },[query,category,sortBy,availability,minRating])
+  },[allBooks, query, category, sortBy, availability, minRating]) // allBooks sebagai dependensi utama
 
   const total = filtered.length
   const pages = Math.max(1, Math.ceil(total / perPage))
@@ -57,6 +120,15 @@ export default function Library() {
     return ()=> document.removeEventListener('mousedown', onDocClick)
   },[filtersOpen])
 
+  if (isLoading) {
+      return <div className="container mt-4 text-center">**Memuat Data Buku...** 🔄</div>
+  }
+  
+  if (error) {
+      return <div className="container mt-4 text-center text-danger">**Kesalahan:** {error}</div>
+  }
+  
+  // Tampilan Utama
   return (
     <div className="container mt-4 library-collection">
       <div className="collection-header">
@@ -119,9 +191,13 @@ export default function Library() {
       </div>
 
           <div className="d-flex justify-between mb-3">
-            <div>Showing <strong>{filtered.length}</strong> of <strong>{SAMPLE_BOOKS.length}</strong> books</div>
-            <div>Sort: <strong>{sortBy}</strong></div>
+            <div>Showing **{pageItems.length}** of **{total}** books</div>
+            <div>Sort: **{sortBy}**</div>
           </div>
+          
+      {filtered.length === 0 && !isLoading && (
+          <div className="text-center mt-5">**Tidak ada buku yang cocok dengan kriteria pencarian/filter.**</div>
+      )}
 
       <div className="book-grid">
         {pageItems.map(b=> (
