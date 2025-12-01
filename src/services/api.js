@@ -80,4 +80,23 @@ export const register = async (name, email, password, confirmPassword) => {
     }
 };
 
+export const logout = async () => {
+    try {
+        // Panggil endpoint /logout yang mencabut token di backend
+        await api.post('/logout'); 
+    } catch (error) {
+        // Jika token sudah dicabut atau server offline, kita tetap paksa logout di frontend
+        console.error("Logout API failed, forcing frontend cleanup:", error);
+    } finally {
+        // Membersihkan token dan role dari storage
+        localStorage.removeItem('auth_token');
+        sessionStorage.removeItem('auth_token');
+        localStorage.removeItem('user_role');
+        sessionStorage.removeItem('user_role');
+        
+        // Opsional: Hapus header Authorization dari Axios
+        delete api.defaults.headers.common['Authorization'];
+    }
+};
+
 export default api;
