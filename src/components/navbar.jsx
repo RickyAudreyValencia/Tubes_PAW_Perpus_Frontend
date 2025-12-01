@@ -1,15 +1,29 @@
 import React, { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom' // Import useLocation
 
 export default function NavBar() {
   const [open, setOpen] = useState(false)
+  const location = useLocation() // Dapatkan objek lokasi saat ini
+
+  // Tentukan apakah route saat ini adalah route petugas
+  // Kita asumsikan semua route petugas diawali dengan '/petugas'
+  const isPetugasRoute = location.pathname.startsWith('/petugas')
+
+  // Fungsi placeholder untuk Logout (ganti dengan logic logout yang sebenarnya)
+  const handleLogout = () => {
+    // Di sini tambahkan logic untuk menghapus token, membersihkan state, dan redirect ke halaman login
+    console.log('User logged out. Redirecting to /login')
+    // Contoh: navigate('/login') jika Anda memiliki hook useNavigate
+    alert('Anda telah Logout.')
+    // Tambahkan logic navigasi/logout yang sebenarnya di sini
+  }
 
   return (
     <header className="library-navbar">
       <div className="container nav-inner">
         <Link className="navbar-brand" to="/">
           <span className="brand-logo" aria-hidden="true">
-            {/* Updated library logo */}
+            {/* ... SVG Logo Anda Tetap di Sini ... */}
             <svg
               width="40"
               height="40"
@@ -73,18 +87,35 @@ export default function NavBar() {
         </button>
 
         <nav className={`nav-links ${open ? 'open' : ''}`} onClick={() => setOpen(false)}>
+          {/* Tautan untuk semua pengguna */}
           <NavLink to="/" className={({isActive}) => 'nav-link' + (isActive ? ' active' : '')}>
             Home
           </NavLink>
           <NavLink to="/library" className={({isActive}) => 'nav-link' + (isActive ? ' active' : '')}>
             Library
           </NavLink>
-          <NavLink to="/login" className={({isActive}) => 'nav-link' + (isActive ? ' active' : '')}>
-            Login
-          </NavLink>
-          <NavLink to="/register" className={({isActive}) => 'nav-link btn-register' + (isActive ? ' active' : '')}>
-            Register
-          </NavLink>
+
+          {/* LOGIC KONDISIONAL BERDASARKAN ROUTE */}
+          {isPetugasRoute ? (
+            // Jika ini adalah route petugas, tampilkan tombol Logout
+            <button 
+                onClick={handleLogout} 
+                className="nav-link btn-register" 
+                style={{ cursor: 'pointer', background: 'none', border: 'none', color: 'inherit', padding: 0 }}
+            >
+                Logout
+            </button>
+          ) : (
+            // Jika BUKAN route petugas, tampilkan Login dan Register
+            <>
+              <NavLink to="/login" className={({isActive}) => 'nav-link' + (isActive ? ' active' : '')}>
+                Login
+              </NavLink>
+              <NavLink to="/register" className={({isActive}) => 'nav-link btn-register' + (isActive ? ' active' : '')}>
+                Register
+              </NavLink>
+            </>
+          )}
         </nav>
       </div>
     </header>

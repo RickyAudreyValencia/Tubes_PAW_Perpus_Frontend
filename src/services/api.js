@@ -35,28 +35,49 @@ export const setAuthToken = (token) => {
 };
 
 export const fetchEvents = async () => {
-  try {
-    const response = await api.get('/buku');
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching buku:", error);
-    throw error;
-  }
+ try {
+   const response = await api.get('/buku');
+     return response.data;
+ } catch (error) {
+    console.error("Error fetching buku:", error);
+ throw error;
+ }
 };
 
 export const login = async (email, password) => {
-  try {
-    // Pastikan endpoint '/login' sesuai dengan route Laravel Anda
-    const response = await api.post('/login', { 
-      email: email,
-      password: password,
-    });
-    
-    return response.data; 
-  } catch (error) {
-    // Melemparkan error agar bisa ditangkap di komponen Login
-    throw error; 
-  }
+     try {
+ // Pastikan endpoint '/login' sesuai dengan route Laravel Anda
+    const response = await api.post('/login', { 
+    email: email,
+    password: password,
+ });
+ 
+ return response.data; 
+ } catch (error) {
+ // Melemparkan error agar bisa ditangkap di komponen Login
+throw error; 
+ }
+};
+
+export const register = async (name, email, password, confirmPassword) => {
+    try {
+        // Data yang dikirim disesuaikan dengan kebutuhan PetugasController::apiStore
+        const response = await api.post('/register', {
+            nama: name, // MAPPING: Mengirim 'name' frontend sebagai 'nama' backend
+            email: email,
+            password: password,
+            // Perhatikan: apiStore tidak memerlukan 'confirmed', tapi untuk jaga-jaga kita bisa kirim
+            // password_confirmation: confirmPassword, 
+            
+            // FIELD WAJIB YANG HILANG: Jabatan, diset default 'Staff Biasa'
+            // Sesuaikan nilai default ini jika ada nilai lain yang lebih cocok.
+            jabatan: 'Staff Biasa', 
+        });
+
+        return response.data; 
+    } catch (error) {
+        throw error; 
+    }
 };
 
 export default api;

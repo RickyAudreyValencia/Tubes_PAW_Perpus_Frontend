@@ -121,7 +121,7 @@ export default function Library() {
   },[filtersOpen])
 
   if (isLoading) {
-      return <div className="container mt-4 text-center">**Memuat Data Buku...** 🔄</div>
+      return <div className="container mt-4 text-center">Memuat Data Buku...🔄</div>
   }
   
   if (error) {
@@ -191,12 +191,12 @@ export default function Library() {
       </div>
 
           <div className="d-flex justify-between mb-3">
-            <div>Showing **{pageItems.length}** of **{total}** books</div>
-            <div>Sort: **{sortBy}**</div>
+            <div>Showing {pageItems.length} of {total} books</div>
+            <div>Sort: {sortBy}</div>
           </div>
           
       {filtered.length === 0 && !isLoading && (
-          <div className="text-center mt-5">**Tidak ada buku yang cocok dengan kriteria pencarian/filter.**</div>
+          <div className="text-center mt-5">Tidak ada buku yang cocok dengan kriteria pencarian/filter.</div>
       )}
 
       <div className="book-grid">

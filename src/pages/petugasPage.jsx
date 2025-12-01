@@ -42,20 +42,34 @@ export default function PetugasPage() {
     }
 
     const mapBackendData = useCallback((data) => {
-        // FIX: Gunakan buku.id, atau ganti ke buku.id_buku jika nama kolom primary key non-standar di Laravel Anda
-        return data.map((buku) => ({
-            id: buku.id || buku.id_buku, // <-- Coba fallback ID non-standar jika buku.id null
-            title: buku.judul || 'No Title',
-            author: buku.penulis || buku.pengarang || 'Unknown',
-            penerbit: buku.penerbit || 'Unknown',
-            year: buku.tahun_terbit || buku.tahun || '-',
-            isbn: buku.isbn || 'N/A',
-            // Pastikan kategori diambil dengan benar
-            category: buku.kategori?.nama || (buku.kategori || 'Unknown'),
-            stok: buku.stok ?? 1,
-            img: buku.gambar || placeholder,
-        }))
-    }, [])
+    return data.map((buku) => {
+        // 1. Dapatkan ID Kategori. Backend mungkin menggunakan 'id_kategori' atau 'kategori' untuk ID-nya.
+        // Cek dulu apakah kategori sudah berupa objek relasi penuh.
+        const categoryId = buku.kategori?.id || buku.id_kategori || buku.kategori;
+
+        // 2. Cari nama kategori dari list CATEGORY_OPTIONS menggunakan ID
+        const categoryOption = CATEGORY_OPTIONS.find(c => String(c.id) === String(categoryId));
+        
+        // 3. Tentukan nama kategori yang akan ditampilkan
+        const categoryName = categoryOption 
+                             ? categoryOption.nama // Nama ditemukan dari ID
+                             : buku.kategori?.nama // Fallback jika backend sudah menyertakan nama
+                             || (typeof buku.kategori === 'string' || typeof buku.kategori === 'number' ? `ID: ${buku.kategori}` : 'Unknown'); // Fallback jika nilainya cuma string/number
+
+        return {
+            id: buku.id || buku.id_buku,
+            title: buku.judul || 'No Title',
+            author: buku.penulis || buku.pengarang || 'Unknown',
+            penerbit: buku.penerbit || 'Unknown',
+            year: buku.tahun_terbit || buku.tahun || '-',
+            isbn: buku.isbn || 'N/A',
+            // Gunakan nama kategori yang sudah dicari
+            category: categoryName,
+            stok: buku.stok ?? 1,
+            img: buku.gambar || placeholder,
+        }
+    })
+}, [])
 
     const loadBooks = useCallback(async () => {
         setIsLoading(true)
@@ -232,8 +246,8 @@ export default function PetugasPage() {
                             <thead>
                                 <tr style={{ textAlign: 'left', background: 'rgba(0,0,0,0.03)' }}>
                                     <th style={{ padding: '12px 16px', width: 40 }}>No</th>
-                                    <th style={{ padding: '12px 16px' }}>Judul Buku</th>
-                                    <th style={{ padding: '12px 16px' }}>Pengarang</th>
+                                    <th style={{ padding: '12px 16px' }}>judul buku </th>
+                                    <th style={{ padding: '12px 16px' }}>Penulis</th>
                                     <th style={{ padding: '12px 16px' }}>Penerbit</th>
                                     <th style={{ padding: '12px 16px' }}>Tahun</th>
                                     <th style={{ padding: '12px 16px' }}>ISBN</th>
@@ -286,28 +300,28 @@ export default function PetugasPage() {
                             <div className="row">
                                 <div className="col-md-6">
                                     <div className="input-field">
-                                        <label className="form-label">Judul Buku *</label>
+                                        <label className="form-label">Judul</label>
                                         <input className={`form-control ${errors.judul ? 'is-invalid' : ''}`} placeholder="Masukkan judul buku" value={form.judul} onChange={(e) => updateField('judul', e.target.value)} />
                                         {errors.judul && <div className="invalid-feedback">{errors.judul}</div>}
                                     </div>
                                 </div>
                                 <div className="col-md-6">
                                     <div className="input-field">
-                                        <label className="form-label">Pengarang *</label>
+                                        <label className="form-label">Penulis</label>
                                         <input className={`form-control ${errors.pengarang ? 'is-invalid' : ''}`} placeholder="Masukkan nama pengarang" value={form.pengarang} onChange={(e) => updateField('pengarang', e.target.value)} />
                                         {errors.pengarang && <div className="invalid-feedback">{errors.pengarang}</div>}
                                     </div>
                                 </div>
                                 <div className="col-md-6">
                                     <div className="input-field">
-                                        <label className="form-label">Penerbit *</label>
+                                        <label className="form-label">Penerbit </label>
                                         <input className={`form-control ${errors.penerbit ? 'is-invalid' : ''}`} placeholder="Masukkan nama penerbit" value={form.penerbit} onChange={(e) => updateField('penerbit', e.target.value)} />
                                         {errors.penerbit && <div className="invalid-feedback">{errors.penerbit}</div>}
                                     </div>
                                 </div>
                                 <div className="col-md-6">
                                     <div className="input-field">
-                                        <label className="form-label">Tahun Terbit *</label>
+                                        <label className="form-label">Tahun Terbit </label>
                                         <input type="number" className={`form-control ${errors.tahun ? 'is-invalid' : ''}`} value={form.tahun} onChange={(e) => updateField('tahun', parseInt(e.target.value || 0))} />
                                         {errors.tahun && <div className="invalid-feedback">{errors.tahun}</div>}
                                     </div>
