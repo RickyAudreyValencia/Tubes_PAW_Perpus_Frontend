@@ -78,7 +78,7 @@ export default function Library() {
         available: availableCount, // number or null when unknown
         rating: buku.rating || 0,
         reads: buku.dibaca || 0,
-        img: buku.gambar || placeholder,
+        img: buku.gambar_sampul || placeholder,
         summary: buku.deskripsi || 'No description available.',
       }
     });
@@ -266,7 +266,13 @@ export default function Library() {
           <div key={b.id} className="book-card">
 
             <div className="card-top">
-              <img className="card-bg-img" src={b.img} onError={(e)=> e.target.src = placeholder} />
+              <img
+  className="card-bg-img"
+  src={b.img.startsWith('http') ? b.img : encodeURI(`http://localhost:8000/${b.img}`)}
+  onError={(e) => e.target.src = placeholder}
+/>
+
+
               <div className="bookmark">🔖</div>
               <div className={`status ${b.status==='Available'?'available':'borrowed'}`}>
                 {b.status}

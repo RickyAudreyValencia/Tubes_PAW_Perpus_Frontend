@@ -18,7 +18,7 @@ export default function MemberDashboard() {
       let raw = []
       try {
         // 1. Coba endpoint khusus anggota
-        const res = await api.get('/peminjaman/anggota')
+        const res = await api.get('/peminjaman')
         if (Array.isArray(res?.data)) raw = res.data
         else if (Array.isArray(res?.data?.data)) raw = res.data.data
         else if (Array.isArray(res?.data?.peminjaman)) raw = res.data.peminjaman
@@ -51,7 +51,13 @@ export default function MemberDashboard() {
         }
       }
       const data = raw.map(item => {
-        const book = item.buku || item.book || item.buku_book || item
+        const book =
+          item.itemBuku?.buku ||
+          item.item_buku?.buku ||     // untuk snake_case dari Laravel
+          item.itemBuku ||            // kalau buku langsung di itemBuku
+          item.item_buku ||           // versi snake_case
+          item.buku ||                // fallback
+          item;
         // Cari tanggal pinjam dari berbagai kemungkinan nama field
         const tanggalPinjam = item.tanggal_pinjam || item.tgl_pinjam || item.start_date || item.createdAt || item.tanggal || ''
         const tanggalKembali = item.tanggal_kembali || item.tgl_kembali || item.tgl_jatuh_tempo || item.end_date || item.due_date || item.return_date || item.returnDate || item.kembali || ''
@@ -87,7 +93,7 @@ export default function MemberDashboard() {
     
     setLoading(true)
     try {
-      await api.delete(`/peminjaman/${loanId}`)
+      await api.delete(`/peminjaman/delete/${loanId}`)
       // Hapus dari list
       setBorrowedBooks(borrowedBooks.filter(b => b.id_peminjaman !== loanId))
       alert('Peminjaman berhasil dibatalkan')
@@ -101,7 +107,7 @@ export default function MemberDashboard() {
 
   const handleStartEdit = (book) => {
     setEditingId(book.id_peminjaman)
-    setEditData({ tanggal_kembali: book.tanggal_kembali || '' })
+    setEditData({ tanggal_kembali: book.tanggal_kembali || book.tgl_jatuh_tempo || '' })
   }
 
   const handleUpdateLoan = async (loanId) => {
@@ -112,8 +118,8 @@ export default function MemberDashboard() {
 
     setLoading(true)
     try {
-      await api.put(`/peminjaman/${loanId}`, {
-        tanggal_kembali: editData.tanggal_kembali
+      await api.put(`/peminjaman/update/${loanId}`, {
+        tgl_jatuh_tempo: editData.tanggal_kembali
       })
       // Update data di list
       setBorrowedBooks(borrowedBooks.map(b => 
@@ -218,9 +224,24 @@ export default function MemberDashboard() {
                         >
                           {b.penulis || b.pengarang || 'Unknown'}
                         </div>
-                        <div className="badge" style={{ background: '#bae6fd', color: '#0369a1', fontSize: 12, borderRadius: 6, padding: '4px 10px', display: 'inline-block', fontWeight: 600 }}>
-                        {b.id_petugas_kembali ? '✓ Selesai' : (b.id_petugas_pinjam ? '📖 Dipinjam' : '⏳ Pending')}
-                      </div>
+                        <div
+                          className="badge"
+                          style={{
+                            background: '#bae6fd',
+                            color: '#0369a1',
+                            fontSize: 12,
+                            borderRadius: 6,
+                            padding: '4px 10px',
+                            display: 'inline-block',
+                            fontWeight: 600
+                          }}
+                        >
+                          {b.status === 'selesai'
+                            ? '✓ Selesai'
+                            : b.status === 'pinjam'
+                            ? '📖 Pinjam'
+                            : '⏳ Pending'}
+                        </div>
                       </div>
                     </div>
                     <div className="mt-3" style={{ fontSize: '0.9rem', lineHeight: 1.6 }}>
