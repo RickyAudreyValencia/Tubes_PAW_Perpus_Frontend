@@ -337,4 +337,14 @@ export const logout = async () => {
     }
 };
 
+// Tambahkan di api.js
+export const updateStatusToPinjam = async (loanId) => {
+  try {
+    const response = await api.put(`/peminjaman/${loanId}/update-status-pinjam`)
+    return response.data
+  } catch (error) {
+    throw error.response?.data || error.message
+  }
+}
+
 export default api;

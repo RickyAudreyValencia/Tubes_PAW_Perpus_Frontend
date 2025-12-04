@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import api, { getLoans, getBooks, acceptLoan, rejectLoan, addFineToLoan } from '../../services/api'
+import api, { getLoans, getBooks, acceptLoan, rejectLoan, addFineToLoan, updateStatusToPinjam } from '../../services/api'
 import Footer from '../../components/Footer'
 
 // Helper function untuk format tanggal
@@ -77,7 +77,37 @@ export default function ManageLoans() {
   }, [])
 
   async function handleAccept(loan) {
-    try { await acceptLoan(loan.id); alert('Loan accepted') } catch (err) { alert('Failed to accept') }
+    // Gunakan id_peminjaman
+    const loanId = loan.id_peminjaman || loan.id
+    
+    console.log('Accepting loan with id_peminjaman:', loanId)
+    
+    if (!loanId) {
+      alert('Tidak dapat menemukan ID peminjaman. Data: ' + JSON.stringify(loan))
+      return
+    }
+    
+    if (!window.confirm(`Apakah Anda yakin ingin mengubah status peminjaman ID ${loanId} menjadi "pinjam"?`)) {
+      return
+    }
+    
+    try {
+      await updateStatusToPinjam(loanId)
+      alert(`Status peminjaman (ID: ${loanId}) berhasil diubah menjadi "pinjam"`)
+      
+      // Update local state
+      setLoans(prevLoans => 
+        prevLoans.map(l => 
+          (l.id_peminjaman || l.id) === loanId 
+            ? { ...l, status: 'pinjam' } 
+            : l
+        )
+      )
+      
+    } catch (err) {
+      console.error('Error updating status:', err)
+      alert('Gagal mengubah status: ' + (err.message || 'Terjadi kesalahan'))
+    }
   }
 
   async function handleReject(loan) { try { await rejectLoan(loan.id); alert('Loan rejected') } catch (err) { alert('Failed to reject') } }
@@ -119,11 +149,45 @@ export default function ManageLoans() {
                   <tr key={l.id} style={{ borderBottom: '1.5px solid rgba(0,0,0,0.10)' }}>
                     <td style={{ paddingLeft: 12, verticalAlign: 'middle', borderRight: '1.5px solid rgba(0,0,0,0.06)' }}>{i+1}</td>
                     <td style={{ verticalAlign: 'middle', borderRight: '1.5px solid rgba(0,0,0,0.06)', textAlign: 'center' }}>{l.member_name || l.anggota?.nama || l.user?.nama || l.user?.name || l.anggota?.name || '—'}</td>
-                    <td style={{ verticalAlign: 'middle', borderRight: '1.5px solid rgba(0,0,0,0.06)', textAlign: 'center' }}>
-                      <div style={{ maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }} title={l.resolvedTitle || l.judul || l.buku?.judul || l.book?.judul || ''}>
-                        {l.resolvedTitle || l.judul || l.buku?.judul || l.book?.judul || l.buku?.title || l.book?.title || (l.id_buku || l.book_id || l.buku?.id || l.book?.id ? `Book #${l.id_buku || l.book_id || l.buku?.id || l.book?.id}` : '—')}
-                      </div>
-                    </td>
+                      <td
+                        style={{
+                          verticalAlign: 'middle',
+                          borderRight: '1.5px solid rgba(0,0,0,0.06)',
+                          textAlign: 'center'
+                        }}
+                      >
+                        {(() => {
+                          const book =
+                            l.itemBuku?.buku ||
+                            l.item_buku?.buku ||
+                            l.itemBuku ||
+                            l.item_buku ||
+                            l.buku ||
+                            null;
+
+                          const title =
+                            book?.judul ||
+                            book?.title ||
+                            l.resolvedTitle ||
+                            l.judul ||
+                            '—';
+
+                          return (
+                            <div
+                              style={{
+                                maxWidth: 240,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                display: 'inline-block'
+                              }}
+                              title={title}
+                            >
+                              {title}
+                            </div>
+                          );
+                        })()}
+                      </td>
                     <td style={{ verticalAlign: 'middle', borderRight: '1.5px solid rgba(0,0,0,0.06)', textAlign: 'center' }}>{formatDate(l.tanggal_pinjam || l.tgl_pinjam || l.start_date || l.createdAt)}</td>
                     <td style={{ verticalAlign: 'middle', borderRight: '1.5px solid rgba(0,0,0,0.06)', textAlign: 'center' }}>{formatDate(l.tgl_jatuh_tempo || l.tanggal_kembali || l.tgl_kembali || l.end_date || l.due_date)}</td>
                     <td style={{ verticalAlign: 'middle', borderRight: '1.5px solid rgba(0,0,0,0.06)', textAlign: 'center' }}>{l.status || '—'}</td>
