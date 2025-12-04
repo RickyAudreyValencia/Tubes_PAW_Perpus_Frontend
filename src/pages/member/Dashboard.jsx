@@ -7,6 +7,9 @@ import api from '../../services/api'
 export default function MemberDashboard() {
   const [borrowedBooks, setBorrowedBooks] = useState([])
   const [search, setSearch] = useState('')
+  const [editingId, setEditingId] = useState(null)
+  const [editData, setEditData] = useState({ tanggal_kembali: '' })
+  const [loading, setLoading] = useState(false)
   const { user } = useAuth()
 
   useEffect(() => {
@@ -51,7 +54,7 @@ export default function MemberDashboard() {
         const book = item.buku || item.book || item.buku_book || item
         // Cari tanggal pinjam dari berbagai kemungkinan nama field
         const tanggalPinjam = item.tanggal_pinjam || item.tgl_pinjam || item.start_date || item.createdAt || item.tanggal || ''
-        const tanggalKembali = item.tanggal_kembali || item.tgl_kembali || item.end_date || item.due_date || ''
+        const tanggalKembali = item.tanggal_kembali || item.tgl_kembali || item.tgl_jatuh_tempo || item.end_date || item.due_date || item.return_date || item.returnDate || item.kembali || ''
         
         // Cari penulis dari berbagai kemungkinan field
         let penulis = ''
@@ -78,6 +81,60 @@ export default function MemberDashboard() {
     fetchBooks()
     return () => { mounted = false }
   }, [user])
+
+  const handleCancelLoan = async (loanId) => {
+    if (!window.confirm('Apakah Anda yakin ingin membatalkan peminjaman ini?')) return
+    
+    setLoading(true)
+    try {
+      await api.delete(`/peminjaman/${loanId}`)
+      // Hapus dari list
+      setBorrowedBooks(borrowedBooks.filter(b => b.id_peminjaman !== loanId))
+      alert('Peminjaman berhasil dibatalkan')
+    } catch (err) {
+      console.error('Gagal membatalkan peminjaman:', err)
+      alert('Gagal membatalkan peminjaman: ' + (err?.response?.data?.message || err.message))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleStartEdit = (book) => {
+    setEditingId(book.id_peminjaman)
+    setEditData({ tanggal_kembali: book.tanggal_kembali || '' })
+  }
+
+  const handleUpdateLoan = async (loanId) => {
+    if (!editData.tanggal_kembali) {
+      alert('Tanggal kembali harus diisi')
+      return
+    }
+
+    setLoading(true)
+    try {
+      await api.put(`/peminjaman/${loanId}`, {
+        tanggal_kembali: editData.tanggal_kembali
+      })
+      // Update data di list
+      setBorrowedBooks(borrowedBooks.map(b => 
+        b.id_peminjaman === loanId 
+          ? { ...b, tanggal_kembali: editData.tanggal_kembali }
+          : b
+      ))
+      setEditingId(null)
+      alert('Peminjaman berhasil diperbarui')
+    } catch (err) {
+      console.error('Gagal memperbarui peminjaman:', err)
+      alert('Gagal memperbarui peminjaman: ' + (err?.response?.data?.message || err.message))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingId(null)
+    setEditData({ tanggal_kembali: '' })
+  }
 
   return (
     <div>
@@ -161,12 +218,104 @@ export default function MemberDashboard() {
                         >
                           {b.penulis || b.pengarang || 'Unknown'}
                         </div>
-                        <div className="badge" style={{ background: '#bae6fd', color: '#0369a1', fontSize: 12, borderRadius: 6, padding: '4px 10px', display: 'inline-block', fontWeight: 600 }}>{b.status || 'Dipinjam'}</div>
+                        <div className="badge" style={{ background: '#bae6fd', color: '#0369a1', fontSize: 12, borderRadius: 6, padding: '4px 10px', display: 'inline-block', fontWeight: 600 }}>
+                        {b.id_petugas_kembali ? '✓ Selesai' : (b.id_petugas_pinjam ? '📖 Dipinjam' : '⏳ Pending')}
+                      </div>
                       </div>
                     </div>
                     <div className="mt-3" style={{ fontSize: '0.9rem', lineHeight: 1.6 }}>
                       <div><strong>Tanggal Pinjam:</strong> {b.tanggal_pinjam ? new Date(b.tanggal_pinjam).toLocaleDateString('id-ID') : '-'}</div>
-                      {b.tanggal_kembali && <div><strong>Tanggal Kembali:</strong> {new Date(b.tanggal_kembali).toLocaleDateString('id-ID')}</div>}
+                      {editingId === b.id_peminjaman ? (
+                        <div style={{ marginTop: '12px' }}>
+                          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '0.85rem' }}>Tanggal Kembali</label>
+                          <input 
+                            type="date"
+                            value={editData.tanggal_kembali.split('T')[0] || ''}
+                            onChange={(e) => setEditData({ ...editData, tanggal_kembali: e.target.value })}
+                            style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.9rem', marginBottom: '10px' }}
+                          />
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              onClick={() => handleUpdateLoan(b.id_peminjaman)}
+                              disabled={loading}
+                              style={{ 
+                                flex: 1, 
+                                padding: '8px 12px', 
+                                background: '#10b981', 
+                                color: 'white', 
+                                border: 'none', 
+                                borderRadius: '6px', 
+                                cursor: 'pointer',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                opacity: loading ? 0.6 : 1
+                              }}
+                            >
+                              Simpan
+                            </button>
+                            <button
+                              onClick={handleCancelEdit}
+                              disabled={loading}
+                              style={{ 
+                                flex: 1, 
+                                padding: '8px 12px', 
+                                background: '#ef4444', 
+                                color: 'white', 
+                                border: 'none', 
+                                borderRadius: '6px', 
+                                cursor: 'pointer',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                opacity: loading ? 0.6 : 1
+                              }}
+                            >
+                              Batal
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div><strong>Tanggal Kembali:</strong> {b.tanggal_kembali ? new Date(b.tanggal_kembali).toLocaleDateString('id-ID') : '-'}</div>
+                          {!b.id_petugas_kembali && (
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                              <button
+                                onClick={() => handleStartEdit(b)}
+                                style={{ 
+                                  flex: 1, 
+                                  padding: '8px 12px', 
+                                  background: '#3b82f6', 
+                                  color: 'white', 
+                                  border: 'none', 
+                                  borderRadius: '6px', 
+                                  cursor: 'pointer',
+                                  fontSize: '0.85rem',
+                                  fontWeight: 600
+                                }}
+                              >
+                                Update
+                              </button>
+                              <button
+                                onClick={() => handleCancelLoan(b.id_peminjaman)}
+                                disabled={loading}
+                                style={{ 
+                                  flex: 1, 
+                                  padding: '8px 12px', 
+                                  background: '#ef4444', 
+                                  color: 'white', 
+                                  border: 'none', 
+                                  borderRadius: '6px', 
+                                  cursor: 'pointer',
+                                  fontSize: '0.85rem',
+                                  fontWeight: 600,
+                                  opacity: loading ? 0.6 : 1
+                                }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
