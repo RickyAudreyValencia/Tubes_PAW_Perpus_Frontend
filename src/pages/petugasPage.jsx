@@ -1,106 +1,3 @@
-import React, { useEffect, useState, useCallback } from 'react'
-import { fetchEvents } from '../services/api'
-import api from '../services/api'
-import Footer from '../components/Footer'
-
-const placeholder = 'https://via.placeholder.com/360x220?text=No+Image'
-
-// ASUMSI: Daftar kategori dan ID-nya di database Anda
-const CATEGORY_OPTIONS = [
-    { id: '1', nama: "Sains" }, 
-    { id: '2', nama: "Teknologi" },
-    { id: '3', nama: "Fiksi" },
-    { id: '4', nama: "Non-Fiksi" }
-];
-
-export default function PetugasPage() {
-    const [books, setBooks] = useState([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState(null)
-    const [isModalOpen, setIsModalOpen] = useState(false) // Digunakan untuk Add dan Edit Modal
-    const [isEditMode, setIsEditMode] = useState(false)
-    const [currentBookId, setCurrentBookId] = useState(null) // State yang menampung ID buku yang sedang diedit
-    const [deletingId, setDeletingId] = useState(null) // ID buku yang sedang dihapus
-
-    const [form, setForm] = useState({
-        judul: '',
-        pengarang: '',
-        penerbit: '',
-        tahun: new Date().getFullYear(),
-        isbn: '',
-        kategori: '', // Akan menyimpan ID kategori (id_kategori)
-        stok: 0,
-    })
-    const [errors, setErrors] = useState({})
-
-    // Fungsi helper untuk mereset semua state modal/form
-    const resetFormState = () => {
-        setErrors({})
-        setForm({ judul: '', pengarang: '', penerbit: '', tahun: new Date().getFullYear(), isbn: '', kategori: '', stok: 0 })
-        setIsEditMode(false)
-        setCurrentBookId(null)
-    }
-
-    const mapBackendData = useCallback((data) => {
-    return data.map((buku) => {
-        // 1. Dapatkan ID Kategori. Backend mungkin menggunakan 'id_kategori' atau 'kategori' untuk ID-nya.
-        // Cek dulu apakah kategori sudah berupa objek relasi penuh.
-        const categoryId = buku.kategori?.id || buku.id_kategori || buku.kategori;
-
-        // 2. Cari nama kategori dari list CATEGORY_OPTIONS menggunakan ID
-        const categoryOption = CATEGORY_OPTIONS.find(c => String(c.id) === String(categoryId));
-        
-        // 3. Tentukan nama kategori yang akan ditampilkan
-        const categoryName = categoryOption 
-                             ? categoryOption.nama // Nama ditemukan dari ID
-                             : buku.kategori?.nama // Fallback jika backend sudah menyertakan nama
-                             || (typeof buku.kategori === 'string' || typeof buku.kategori === 'number' ? `ID: ${buku.kategori}` : 'Unknown'); // Fallback jika nilainya cuma string/number
-
-        return {
-            id: buku.id || buku.id_buku,
-            title: buku.judul || 'No Title',
-            author: buku.penulis || buku.pengarang || 'Unknown',
-            penerbit: buku.penerbit || 'Unknown',
-            year: buku.tahun_terbit || buku.tahun || '-',
-            isbn: buku.isbn || 'N/A',
-            // Gunakan nama kategori yang sudah dicari
-            category: categoryName,
-            stok: buku.stok ?? 1,
-            img: buku.gambar || placeholder,
-        }
-    })
-}, [])
-
-    const loadBooks = useCallback(async () => {
-        setIsLoading(true)
-        setError(null)
-        try {
-            const res = await fetchEvents()
-            // Pastikan ini mengambil data array dari respons paginated atau non-paginated
-            const raw = Array.isArray(res?.data) ? res.data : (Array.isArray(res?.data?.data) ? res.data.data : []);
-            setBooks(mapBackendData(raw))
-        } catch (err) {
-            console.error('Gagal memuat buku', err)
-            setError(err.message || 'Unknown error')
-        } finally {
-            setIsLoading(false)
-        }
-    }, [mapBackendData])
-
-    useEffect(() => {
-        loadBooks()
-    }, [loadBooks])
-
-    // Mengganti closeAdd/closeInline menjadi satu fungsi closeForm
-    function closeForm() {
-        resetFormState(); 
-        setIsModalOpen(false)
-    }
-
-    function handleAdd() {
-        resetFormState(); // Reset state
-        setIsModalOpen(true)
-    }
 
     // Fungsi untuk mengisi nilai dari baris tabel ke modal
     function openEditFormFromRow(book) {
@@ -221,9 +118,9 @@ export default function PetugasPage() {
         }
     }
 
-    return (
-        <div className="container mt-4">
-            <div className="card p-3">
+import PetugasPage from './officer/petugasPage'
+
+export default PetugasPage
                 <div className="d-flex justify-between align-center" style={{ marginBottom: 12 }}>
                     <div>
                         <small className="muted">Data Buku</small>

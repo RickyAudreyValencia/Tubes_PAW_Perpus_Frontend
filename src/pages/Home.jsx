@@ -38,6 +38,15 @@ export default function Home() {
 
             <div className="hero-actions">
               <Link to="/library" className="btn primary-cta">Explore Library</Link>
+              <Link to="/register" className="btn btn-ghost">Join as Member</Link>
+              <Link to="/login" className="btn btn-outline-secondary">Officer Login</Link>
+            </div>
+
+            <div className="mt-3">
+              <div className="d-flex gap-2" style={{ justifyContent: 'flex-start' }}>
+                <Link to="/register" className="btn btn-ghost">I'm a Member</Link>
+                <Link to="/login" className="btn btn-outline-secondary">I'm a Library Officer</Link>
+              </div>
             </div>
           </div>
 

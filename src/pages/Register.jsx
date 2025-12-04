@@ -2,19 +2,20 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom' // Import useNavigate
 // Pastikan Anda mengimpor fungsi register dari file api Anda
 import { register, setAuthToken } from '../services/api'; 
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Register() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [agree, setAgree] = useState(false)
   const [errors, setErrors] = useState({})
   // Tambahkan state untuk API submission
   const [isSubmitting, setIsSubmitting] = useState(false) 
   const [apiError, setApiError] = useState(null) 
 
   const navigate = useNavigate(); // Inisialisasi useNavigate
+  const { setCredentials } = useAuth()
 
   // Modifikasi fungsi validate agar pesan error berbahasa Indonesia 
   // dan lebih ringkas (opsional, tapi disarankan agar konsisten dengan Login.jsx)
@@ -27,7 +28,6 @@ export default function Register() {
     else if (password.length < 6) e.password = 'Password minimal 6 karakter'
     if (!confirmPassword) e.confirmPassword = 'Konfirmasi password wajib diisi'
     else if (confirmPassword !== password) e.confirmPassword = 'Password tidak cocok'
-    if (!agree) e.agree = 'Anda harus menyetujui syarat & ketentuan'
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -48,16 +48,16 @@ export default function Register() {
 
       // 2. Ambil Token (jika API register langsung mengembalikan token/langsung login)
       const token = response.token || response.access_token 
+      const role = response.role || response.user?.role || response.data?.role
 
       if (token) {
         // 3. Simpan token dan atur header Axios (Asumsi: registrasi otomatis login)
-        // Disimpan di sessionStorage untuk kasus register, biasanya tidak ingat saya
-        sessionStorage.setItem('auth_token', token)
-        localStorage.removeItem('auth_token')
-        setAuthToken(token)  
-        
-        // 4. NAVIGASI KE HALAMAN PETUGAS SETELAH SUKSES REGISTRASI/LOGIN
-        navigate('/petugas') 
+        const user = response.user || response.data?.user || response.data
+        await setCredentials({ token, role, user, remember: false })
+        setAuthToken(token)
+        // NAVIGASI KE HALAMAN YANG SESUAI BERDASARKAN ROLE
+        if (role === 'petugas') navigate('/petugas/dashboard')
+        else navigate('/anggota/dashboard')
       } else {
         // Jika API register tidak mengembalikan token, mungkin perlu navigasi ke halaman login
         alert('Registrasi berhasil. Silakan login.')
@@ -191,18 +191,7 @@ export default function Register() {
               {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
             </div>
 
-            <div className="form-group mt-3">
-              <label className="remember">
-                <input 
-                  type="checkbox" 
-                  checked={agree} 
-                  onChange={(e)=>setAgree(e.target.checked)} 
-                  disabled={isSubmitting} // Disable saat submit
-                /> 
-                I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
-              </label>
-              {errors.agree && <div className="invalid-feedback">{errors.agree}</div>}
-            </div>
+            {/* Terms checkbox removed: registration now only requires name, email, password, and confirm password */}
 
             <button 
                 className="library-btn register-cta" 
@@ -211,7 +200,22 @@ export default function Register() {
             >
                 {isSubmitting ? 'Registering...' : 'Register →'}
             </button>
-            
+
+            {import.meta.env.DEV && (
+              <div style={{marginTop: 12, padding: 12, borderRadius: 8, background: 'rgba(0,0,0,0.04)', fontSize: 13}}>
+                <strong>Developer hint</strong>: If the backend returns a `role` property in the registration response, the frontend will store it for auto-routing.
+                <div style={{marginTop:8, fontSize: 12}}>
+                  Example response (recommended):
+                  <pre style={{whiteSpace:'pre-wrap', padding:8, marginTop:8, borderRadius:6, background:'#fff'}}>{`{
+  "token": "<jwt-token>",
+  "role": "anggota | petugas",
+  "user": { "id": 123, "nama": "Jane", "email": "jane@example.com" }
+}`}</pre>
+                </div>
+                <div style={{marginTop:8, color:'rgba(0,0,0,0.6)'}}>The frontend reads `response.role` or `response.user?.role` and saves it in <code>sessionStorage</code> under `user_role`.</div>
+              </div>
+            )}
+
             <div className="signup-note">Already have an account? <Link to="/login">Login here</Link></div>
 
           </form>

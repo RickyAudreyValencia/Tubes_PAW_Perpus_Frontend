@@ -1,178 +1,146 @@
-import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom' 
-import { login, setAuthToken } from '../services/api'; 
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { login as apiLogin, setAuthToken } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Login() {
-   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [remember, setRemember] = useState(false)
-  const [errors, setErrors] = useState({})
-  const [isSubmitting, setIsSubmitting] = useState(false) 
-  const [apiError, setApiError] = useState(null) 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiError, setApiError] = useState(null);
 
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
+  const { setCredentials } = useAuth();
 
- function validate() {
-   const e = {}
-   if (!email) e.email = 'Email wajib diisi'
-   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Format email tidak valid'
-   if (!password) e.password = 'Password wajib diisi'
-   else if (password.length < 6) e.password = 'Password minimal 6 karakter'
-  setErrors(e)
-   return Object.keys(e).length === 0
- }
+  function validate() {
+    const e = {};
+    if (!email) e.email = "Email wajib diisi";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      e.email = "Format email tidak valid";
 
-  async function handleSubmit(ev) {
-   ev.preventDefault()
-   setApiError(null) 
- 
-   if (!validate()) return
- 
-   setIsSubmitting(true)
- 
-   try {
-   // 1. Panggil API Login (ke /api/login)
-   const response = await login(email, password)
+    if (!password) e.password = "Password wajib diisi";
+    else if (password.length < 6)
+      e.password = "Password minimal 6 karakter";
 
-   // 2. Ambil Token 
-   const token = response.token || response.access_token 
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
 
-    // 3. AMBIL DATA ROLE DARI RESPON API
-    // Kita mengambil role dari response.role (yang dikirim AuthController)
-    const role = response.role; 
+  async function handleSubmit(ev) {
+    ev.preventDefault();
+    setApiError(null);
 
+    if (!validate()) return;
 
-   if (token) {
-     // 4. Simpan token dan atur header Axios
-    if (remember) {
-                localStorage.setItem('auth_token', token)
-                sessionStorage.removeItem('auth_token')
-                // --- BARIS BARU: Simpan Role di localStorage ---
-                localStorage.setItem('user_role', role);
-                sessionStorage.removeItem('user_role');
-                // ---------------------------------------------
-            } else {
-                sessionStorage.setItem('auth_token', token)
-                localStorage.removeItem('auth_token')
-                // --- BARIS BARU: Simpan Role di sessionStorage ---
-                sessionStorage.setItem('user_role', role);
-                localStorage.removeItem('user_role');
-                // ------------------------------------------------
-            }
-     setAuthToken(token)  
-     
-     // 5. NAVIGASI BERSYARAT
-        if (role === 'petugas') {
-            navigate('/petugas');
-        } else if (role === 'anggota') {
-            navigate('/library');
-        } else {
-             // Fallback jika role tidak terdeteksi
-             console.warn("Role tidak terdeteksi, dialihkan ke library.");
-             navigate('/library');
-        }
+    setIsSubmitting(true);
 
+    try {
+      const response = await apiLogin(email, password);
 
-   } else {
-   setApiError('Login berhasil, tetapi token otentikasi tidak ditemukan dalam respons.')
-   }
+      const token = response.token || response.access_token;
+      let role = response.role || response.user?.role || "anggota";
+      const user = response.user || response.data?.user || response;
 
-   } catch (err) {
-   console.error('Login Gagal:', err)
+      if (!token) throw new Error("Token tidak ditemukan dari server");
 
-  // Penanganan Error API
-  const responseError = err.response?.data || err;
+      // Normalize role: backend mungkin return 'staff' tapi kita expect 'petugas'
+      if (role === 'staff' || role === 'officer') {
+        role = 'petugas'
+      } else if (role !== 'petugas' && role !== 'anggota') {
+        role = 'anggota' // fallback to member if unknown role
+      }
 
-  if (responseError.message && responseError.message.toLowerCase().includes('unauthenticated')) {
-             setApiError('Kredensial tidak valid. Silakan cek kembali email dan password Anda.')
-        } else if (responseError.message) {
-      setApiError(responseError.message);
-      } else if (responseError.error) {
-      setApiError(responseError.error);
-      } else {
-    setApiError('Gagal terhubung ke server atau terjadi kesalahan tak terduga.');
-    }
-  } finally {
-  setIsSubmitting(false)
-  }
-}
+      // simpan token
+      if (remember) {
+        localStorage.setItem("auth_token", token);
+        localStorage.setItem("user_role", role);
+        localStorage.setItem("user_info", JSON.stringify(user));
+      } else {
+        sessionStorage.setItem("auth_token", token);
+        sessionStorage.setItem("user_role", role);
+        sessionStorage.setItem("user_info", JSON.stringify(user));
+      }
 
-     return (
-    <div className="login-page">
-    <div className="login-container">
-    <div className="login-card">
-    <div className="login-avatar">
-    <svg viewBox="0 0 24 24" width="34" height="34" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-    <path d="M6 2h12v4l-6 4-6-4V2z" fill="var(--library-accent)" stroke="none" />
-    <path d="M6 6v14h12V6" fill="#fff" opacity="0.9" />
-    </svg>
-    </div>
-    <h3 className="login-title">Welcome Back</h3>
-    <div className="login-sub">Login to access your digital library</div>
+      setAuthToken(token);
+      setCredentials({ token, role, user, remember });
 
-    <form onSubmit={handleSubmit} noValidate>
-                {/* Menampilkan Error API di sini */}
-                {apiError && <div className="invalid-feedback api-error">{apiError}</div>}
+      // arahkan sesuai role
+      navigate(role === "petugas" ? "/petugas/dashboard" : "/anggota/dashboard");
+    } catch (err) {
+      console.error("Login gagal:", err);
+      const e = err.response?.data || err;
+      setApiError(e.message || "Terjadi kesalahan saat login");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
-      <div className="input-field">
-      <div className="input-wrap">
-         <div className="input-icon" aria-hidden> {/* Email Icon */} </div>
-            <input 
-                        type="email" 
-                        placeholder="you@example.com" 
-                        value={email} 
-                        onChange={(e)=>setEmail(e.target.value)} 
-                        className={errors.email || apiError? 'is-invalid':''} 
-                        disabled={isSubmitting}
-                    />
-      </div>
-      </div>
- {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+  return (
+    <div className="login-page">
+      <div className="login-container">
+        <div className="login-card">
 
-              <div className="input-field">
-              <div className="input-wrap">
-              <div className="input-icon" aria-hidden> {/* Password Icon */} </div>
-            <input   
-                        type="password" 
-                        placeholder="Enter your password" 
-                        value={password} 
-                        onChange={(e)=>setPassword(e.target.value)} 
-                        className={errors.password || apiError ? 'is-invalid':''} 
-                        disabled={isSubmitting}
-                    />
-     </div>
-      </div>
-      {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+          <h3 className="login-title">Welcome Back</h3>
 
-   <div className="small-row">
-      <label className="remember"><input type="checkbox" checked={remember} onChange={(e)=>setRemember(e.target.checked)} disabled={isSubmitting} /> Remember me</label>
-      <a className="forgot" href="#">Forgot password?</a>
-      </div>
+          <form onSubmit={handleSubmit} noValidate>
 
-       <button className="login-cta" type="submit" disabled={isSubmitting}>
-      {isSubmitting ? 'Logging In...' : 'Login to Account →'}
- </button>
+            {apiError && (
+              <div className="invalid-feedback api-error">{apiError}</div>
+            )}
 
-         <div className="or-sep">Or continue with</div>
+            <div className="input-field">
+              <input
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={errors.email ? "is-invalid" : ""}
+                disabled={isSubmitting}
+              />
+              {errors.email && (
+                <div className="invalid-feedback">{errors.email}</div>
+              )}
+            </div>
 
-{/* Social buttons... */}
-        <div className="social-row">
-        <button type="button" className="social-btn google-btn">
-        <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google"/>
-       <span>Google</span>
-</button>
- <button type="button" className="social-btn facebook-btn">
-<svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
- <path fill="#1877f2" d="M22.675 0H1.325C.593 0 0 .593 0 1.325v21.351C0 23.406.593 24 1.325 24h11.5v-9.294H9.692v-3.622h3.133V9.412c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.465h-1.26c-1.242 0-1.63.771-1.63 1.562v1.875h2.773l-.443 2.917h-2.33V24H24C23.406 24 24 23.406 24 22.676V1.325C24 .593 23.406 0 22.675 0z"/>
-  </svg>
-    <span>Facebook</span>
-    </button>
-            </div>
+            <div className="input-field">
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={errors.password ? "is-invalid" : ""}
+                disabled={isSubmitting}
+              />
+              {errors.password && (
+                <div className="invalid-feedback">{errors.password}</div>
+              )}
+            </div>
 
- <div className="signup-note">Don't have an account? <Link to="/register">Sign up for free</Link></div>
-  </form>
-  </div>
-  </div>
-  </div>
- )
+            <label style={{ display: "flex", gap: 8, marginTop: 8 }}>
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+              />
+              Remember me
+            </label>
+
+            <button
+              className="login-cta"
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Logging in..." : "Login"}
+            </button>
+
+            <div style={{ marginTop: 12 }}>
+              Belum punya akun? <Link to="/register">Daftar</Link>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
 }

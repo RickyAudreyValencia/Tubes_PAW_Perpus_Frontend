@@ -55,14 +55,14 @@ export default function NavBar() {
         <nav className={`nav-links ${open ? 'open' : ''}`} onClick={() => setOpen(false)}>
           {isAuthenticated ? (
             <>
-              {/* Home link - biru block dengan Library dan Dashboard */}
+              {/* Tautan Home */}
               {!isPetugas && (
                 <NavLink to={homePath} className={({isActive}) => 'nav-link' + (isActive ? ' active' : '')}>
                   Home
                 </NavLink>
               )}
 
-              {/* Library link */}
+              {/* Tautan Library (hanya untuk anggota) */}
               {!isPetugas && (
                 <NavLink to="/library" className={({isActive}) => 'nav-link' + (isActive ? ' active' : '')}>
                   Library

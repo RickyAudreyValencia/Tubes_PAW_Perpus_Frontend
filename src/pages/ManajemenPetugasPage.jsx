@@ -18,7 +18,8 @@ const INITIAL_FORM = {
 };
 
 export default function ManajemenPetugasPage() {
-    const [petugasList, setPetugasList] = useState(MOCK_PETUGAS);
+    // Single-admin mode: frontend shows a single pre-configured officer account only
+    const admin = { id: 1, nama: 'Admin', email: 'admin@gmail.com', jabatan: 'Administrator' }
     const [form, setForm] = useState(INITIAL_FORM);
     const [isEditing, setIsEditing] = useState(false);
     const [currentPetugasId, setCurrentPetugasId] = useState(null);
@@ -81,13 +82,10 @@ export default function ManajemenPetugasPage() {
     return (
         <div className="container mt-4">
             <div className="card p-4">
-                <h2 className="mb-4">CRUD Manajemen Akun Petugas</h2>
+                <h2 className="mb-4">Manajemen Akun Petugas (Deprecated)</h2>
+                <p className="text-muted">Aplikasi menggunakan satu akun petugas terkonfigurasi. Untuk sementara UI pengelolaan multi-akun dinonaktifkan.</p>
 
-                <div className="d-flex justify-content-end mb-3">
-                    <button className="primary-cta" onClick={() => openForm()}>
-                        + Tambah Petugas
-                    </button>
-                </div>
+                {/* CRUD dikunci sesuai requirement: hanya satu akun admin */}
 
                 {/* TABEL DAFTAR PETUGAS */}
                 <div style={{ overflowX: 'auto' }}>
@@ -101,19 +99,16 @@ export default function ManajemenPetugasPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {petugasList.map((p) => (
-                                <tr key={p.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-                                    <td style={{ padding: '14px 16px' }}>{p.nama}</td>
-                                    <td style={{ padding: '14px 16px' }}>{p.email}</td>
-                                    <td style={{ padding: '14px 16px' }}>{p.jabatan}</td>
-                                    <td style={{ padding: '14px 16px' }}>
-                                        <div style={{ display: 'flex', gap: 8 }}>
-                                            <button className="btn btn-sm" onClick={() => openForm(p)} title="Edit">✏️</button>
-                                            <button className="btn btn-sm" style={{ color: '#dc3545' }} onClick={() => handleDelete(p.id, p.nama)} title="Hapus">🗑️</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                            <tr key={admin.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                                <td style={{ padding: '14px 16px' }}>{admin.nama}</td>
+                                <td style={{ padding: '14px 16px' }}>{admin.email}</td>
+                                <td style={{ padding: '14px 16px' }}>{admin.jabatan}</td>
+                                <td style={{ padding: '14px 16px' }}>
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                        <div className="text-muted small">Managed on backend</div>
+                                    </div>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
