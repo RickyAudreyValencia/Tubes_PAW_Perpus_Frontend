@@ -193,9 +193,8 @@ export default function ManageLoans() {
                     <td style={{ verticalAlign: 'middle', borderRight: '1.5px solid rgba(0,0,0,0.06)', textAlign: 'center' }}>{l.status || '—'}</td>
                     <td style={{ verticalAlign: 'middle', textAlign: 'center' }}>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
-                        <button className="btn btn-sm" onClick={() => handleAccept(l)}>Accept</button>
-                        <button className="btn btn-sm" onClick={() => handleReject(l)}>Reject</button>
-                        <button className="btn btn-sm" onClick={() => handleAddFine(l)} style={{ backgroundColor: '#ff6b6b', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: 6, boxShadow: 'none' }}>Add Fine</button>
+                        <button className="btn btn-sm" onClick={() => handleAccept(l)} style={{ backgroundColor: '#10b981', color: '#fff', border: '1.5px solid #059669', padding: '6px 12px', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}>Accept</button>
+                        <button className="btn btn-sm" onClick={() => handleReject(l)} style={{ backgroundColor: '#ef4444', color: '#fff', border: '1.5px solid #dc2626', padding: '6px 12px', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}>Reject</button>
                       </div>
                     </td>
                   </tr>

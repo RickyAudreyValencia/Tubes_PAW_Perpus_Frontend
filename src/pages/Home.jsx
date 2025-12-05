@@ -92,39 +92,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* POPULAR BOOKS */}
-        <section className="popular-books mb-5 text-center">
-          <h3 className="mb-3">Buku Terpopuler</h3>
-          <p className="text-muted small">Kumpulan buku yang paling sering dipinjam oleh pengunjung.</p>
-
-          <div className="row mt-4">
-            {sampleBooks.map((b) => (
-              <div key={b.id} className="col-6 col-md-3 mb-4">
-                <div className="book-card card h-100 text-center p-3">
-                  <img
-                    src={b.img}
-                    alt={b.title}
-                    className="book-cover mb-3 rounded"
-                    onError={(e) => { e.target.src = placeholder }}
-                  />
-                  <div className="card-body p-0">
-                    <h5 className="book-title">{b.title}</h5>
-                    <div className="text-muted small">{b.author}</div>
-                  </div>
-                  <div className="mt-3">
-                    <button
-                      className="btn btn-outline-secondary btn-sm"
-                      onClick={() => setSelectedBook(b)}
-                    >
-                      Detail
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
         {/* BOOK DETAIL MODAL */}
         {selectedBook && (
           <div className="modal-overlay" role="dialog" aria-modal="true" onClick={closeModal}>

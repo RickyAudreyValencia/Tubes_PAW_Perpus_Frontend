@@ -26,7 +26,6 @@ export default function Library() {
   const [selectedBook, setSelectedBook] = useState(null)
   const [borrowStart, setBorrowStart] = useState('')
   const [borrowEnd, setBorrowEnd] = useState('')
-  const [paymentMethod, setPaymentMethod] = useState('bank_transfer')
   const perPage = 6
   const filterRef = useRef(null)
 
@@ -206,18 +205,6 @@ export default function Library() {
                   <option value="Borrowed">Borrowed</option>
                 </select>
 
-                <label className="muted small mt-2">Minimum Rating</label>
-                <select 
-                  className="form-control" 
-                  value={minRating} 
-                  onChange={(e)=>{ setMinRating(Number(e.target.value)); setPage(1)}}
-                >
-                  <option value={0}>Any</option>
-                  <option value={4}>≥ 4.0</option>
-                  <option value={4.5}>≥ 4.5</option>
-                  <option value={4.8}>≥ 4.8</option>
-                </select>
-
                 <div style={{display:'flex', gap:8, marginTop:12}}>
                   <button className="btn btn-ghost" onClick={()=>{
                     setAvailability('All')
@@ -346,46 +333,36 @@ export default function Library() {
               />
             </div>
 
-            <div style={{marginBottom: '20px'}}>
-              <label style={{display: 'block', fontWeight: '600', marginBottom: '8px', fontSize: '14px'}}>
-                💳 Payment Method
-              </label>
-              <select 
-                className="form-control" 
-                value={paymentMethod} 
-                onChange={(e)=>setPaymentMethod(e.target.value)}
-                style={{padding: '10px', borderRadius: '4px', border: '1px solid #ddd'}}
-              >
-                <option value="bank_transfer">Bank Transfer</option>
-                <option value="card">Credit Card</option>
-                <option value="cash">Cash</option>
-              </select>
-            </div>
-
             <div style={{
               backgroundColor: '#f0f8f9',
-              padding: '15px',
-              borderRadius: '6px',
-              marginBottom: '20px',
+              padding: '16px',
+              borderRadius: '8px',
+              marginBottom: '24px',
               fontSize: '13px',
-              color: '#666'
+              color: '#555'
             }}>
-              <p style={{margin: '5px 0'}}>
-                <strong>Loan Duration:</strong> {
-                  borrowStart && borrowEnd 
-                    ? Math.ceil((new Date(borrowEnd) - new Date(borrowStart)) / (1000 * 60 * 60 * 24)) + ' days'
-                    : 'Select dates'
-                }
-              </p>
-              <p style={{margin: '5px 0'}}>
-                <strong>Status:</strong> <span style={{color: '#00acc1', fontWeight: '600'}}>
-                  {typeof selectedBook.available === 'number' ? (
-                    `${selectedBook.available} available`
-                  ) : (
-                    selectedBook.status
-                  )}
-                </span>
-              </p>
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px'}}>
+                <div>
+                  <p style={{margin: '0 0 4px 0', color: '#888', fontSize: '12px', fontWeight: '600'}}>Duration</p>
+                  <p style={{margin: '0', fontSize: '15px', fontWeight: '700', color: '#00acc1'}}>
+                    {
+                      borrowStart && borrowEnd 
+                        ? Math.ceil((new Date(borrowEnd) - new Date(borrowStart)) / (1000 * 60 * 60 * 24)) + ' days'
+                        : '-'
+                    }
+                  </p>
+                </div>
+                <div>
+                  <p style={{margin: '0 0 4px 0', color: '#888', fontSize: '12px', fontWeight: '600'}}>Availability</p>
+                  <p style={{margin: '0', fontSize: '15px', fontWeight: '700', color: '#00acc1'}}>
+                    {typeof selectedBook.available === 'number' ? (
+                      `${selectedBook.available} book`
+                    ) : (
+                      selectedBook.status
+                    )}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div style={{display:'flex', gap:12, marginTop:20}}>
@@ -425,7 +402,7 @@ export default function Library() {
                       id_buku: bookId,
                       tanggal_pinjam: borrowStart,
                       tanggal_kembali: borrowEnd,
-                      metode_pembayaran: paymentMethod,
+                      metode_pembayaran: 'bank_transfer',
                     }
                     
                     console.log('Creating loan with payload:', loanPayload)
@@ -457,7 +434,7 @@ export default function Library() {
                 }}
                 style={{flex: 1, padding: '12px', fontSize: '14px', fontWeight: '600'}}
               >
-                ✓ Confirm & Request Loan
+                ✓ Borrow
               </button>
 
               <button 

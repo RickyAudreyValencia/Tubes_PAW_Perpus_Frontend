@@ -51,6 +51,7 @@ export default function MemberDashboard() {
         }
       }
       const data = raw.map(item => {
+        console.log('Item dari API:', item)
         const book =
           item.itemBuku?.buku ||
           item.item_buku?.buku ||     // untuk snake_case dari Laravel
@@ -71,12 +72,23 @@ export default function MemberDashboard() {
         } else if (item.pengarang) {
           penulis = item.pengarang
         }
+
+        // Cari gambar dari berbagai field
+        let gambar = ''
+        if (book) {
+          gambar = book.gambar_sampul || book.gambar || book.img || book.cover || book.image || ''
+        }
+        if (!gambar && item.gambar_sampul) gambar = item.gambar_sampul
+        if (!gambar && item.gambar) gambar = item.gambar
+        if (!gambar && item.img) gambar = item.img
+        if (!gambar && item.cover) gambar = item.cover
+        if (!gambar && item.image) gambar = item.image
         
         return {
           ...item,
           judul: (book && (book.judul || book.title)) || item.judul || '',
           penulis: penulis || 'Penulis Tidak Diketahui',
-          gambar: (book && (book.gambar || book.img)) || item.gambar || 'https://via.placeholder.com/80x110?text=No+Cover',
+          gambar: gambar || 'https://via.placeholder.com/120x160?text=No+Cover',
           tanggal_pinjam: tanggalPinjam,
           tanggal_kembali: tanggalKembali,
           status: item.status || 'Dipinjam',
@@ -176,19 +188,25 @@ export default function MemberDashboard() {
                     <div className="d-flex align-items-start mb-3">
                       <div style={{ position: 'relative', marginRight: 18 }}>
                         <img 
-                          src={b.gambar || 'https://via.placeholder.com/80x110?text=No+Cover'} 
+                          src={
+                            b.gambar && b.gambar.startsWith('http')
+                              ? b.gambar
+                              : b.gambar
+                              ? `http://localhost:8000/${b.gambar}`
+                              : 'https://via.placeholder.com/120x160?text=No+Cover'
+                          } 
                           alt={b.judul || 'No Title'} 
                           style={{ 
-                            width: 80, 
-                            height: 110, 
-                            objectFit: 'cover', 
+                            width: '100%', 
+                            height: 250, 
+                            objectFit: 'contain', 
                             borderRadius: 8, 
                             background: '#e0e7ef',
                             border: '1px solid #d1d5db',
                             boxShadow: '0 2px 4px rgba(0,0,0,0.08)'
                           }} 
                           onError={(e) => {
-                            e.target.src = 'https://via.placeholder.com/80x110?text=No+Cover'
+                            e.target.src = 'https://via.placeholder.com/120x160?text=No+Cover'
                           }}
                         />
                       </div>
