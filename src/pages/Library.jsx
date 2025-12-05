@@ -4,14 +4,14 @@ import { useAuth } from '../contexts/AuthContext';
 
 const placeholder = 'https://via.placeholder.com/360x220?text=No+Image'
 
-const CATEGORIES = ['All','Fiction','Non-Fiction','Technology','History','Biography','Children']
+const CATEGORIES = ['All','Novel','Sains','Teknologi','Sosial & Komunikasi','Pengembangan Diri']
 
 const CATEGORY_MAP = { 
-    History: 'History',
-    Children: 'Children',
-    Biography: 'Biography',
-    Fiction: 'Fiction',
-    Technology: 'Technology',
+    'Sosial & Komunikasi': 'Sosial & Komunikasi',
+    'Pengembangan Diri': 'Pengembangan Diri',
+    Novel: 'Novel',
+    Sains: 'Sains',
+    Teknologi: 'Teknologi',
 }
 
 export default function Library() {
@@ -169,94 +169,82 @@ export default function Library() {
 
       {/* SEARCH PANEL */}
       <div className="search-panel card p-3 mb-4">
-        <div className="row" style={{alignItems:'center'}}>
-          
-          {/* QUERY INPUT */}
-          <div className="col-md-8">
-            <div className="search-row">
-              <input 
-                className="search-input" 
-                placeholder="Search books, authors, topics..." 
-                value={query} 
-                onChange={(e)=>{ setQuery(e.target.value); setPage(1)}}
-              />
-              <button className="btn btn-search">Search</button>
-            </div>
-
-            <div className="filter-chips mt-3">
-              {CATEGORIES.map(cat => (
-                <button 
-                  key={cat} 
-                  className={`chip ${category===cat? 'active':''}`} 
-                  onClick={()=>{ setCategory(cat); setPage(1)}}
-                >{cat}</button>
-              ))}
-            </div>
+        {/* TOP ROW: SEARCH + FILTER */}
+        <div style={{display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '16px'}}>
+          {/* QUERY INPUT + SEARCH BUTTON */}
+          <div className="search-row" style={{flex: 1}}>
+            <input 
+              className="search-input" 
+              placeholder="Search books, authors, topics..." 
+              value={query} 
+              onChange={(e)=>{ setQuery(e.target.value); setPage(1)}}
+            />
+            <button className="btn btn-search">Search</button>
           </div>
 
-          {/* FILTERS */}
-          <div className="col-md-4 text-end">
-            <div className="controls">
+          {/* FILTERS - RIGHT SIDE */}
+          <div className="controls">
+            <div className="filter-wrap" ref={filterRef}>
+              <button 
+                className={`btn btn-ghost ${filtersActive?'active':''}`} 
+                onClick={()=>setFiltersOpen(v=>!v)}
+              >
+                Filter ▾
+              </button>
 
-              <div className="filter-wrap" ref={filterRef}>
-                <button 
-                  className={`btn btn-ghost ${filtersActive?'active':''}`} 
-                  onClick={()=>setFiltersOpen(v=>!v)}
+              <div className={`filter-panel ${filtersOpen ? 'open':''}`}>
+                <h4>Filter books</h4>
+
+                <label className="muted small">Availability</label>
+                <select 
+                  className="form-control" 
+                  value={availability} 
+                  onChange={(e)=>{ setAvailability(e.target.value); setPage(1)}}
                 >
-                  Filter ▾
-                </button>
+                  <option value="All">All</option>
+                  <option value="Available">Available</option>
+                  <option value="Borrowed">Borrowed</option>
+                </select>
 
-                <div className={`filter-panel ${filtersOpen ? 'open':''}`}>
-                  <h4>Filter books</h4>
+                <label className="muted small mt-2">Minimum Rating</label>
+                <select 
+                  className="form-control" 
+                  value={minRating} 
+                  onChange={(e)=>{ setMinRating(Number(e.target.value)); setPage(1)}}
+                >
+                  <option value={0}>Any</option>
+                  <option value={4}>≥ 4.0</option>
+                  <option value={4.5}>≥ 4.5</option>
+                  <option value={4.8}>≥ 4.8</option>
+                </select>
 
-                  <label className="muted small">Availability</label>
-                  <select 
-                    className="form-control" 
-                    value={availability} 
-                    onChange={(e)=>{ setAvailability(e.target.value); setPage(1)}}
-                  >
-                    <option value="All">All</option>
-                    <option value="Available">Available</option>
-                    <option value="Borrowed">Borrowed</option>
-                  </select>
+                <div style={{display:'flex', gap:8, marginTop:12}}>
+                  <button className="btn btn-ghost" onClick={()=>{
+                    setAvailability('All')
+                    setMinRating(0)
+                    setPage(1)
+                    setFiltersOpen(false)
+                  }}>Reset</button>
 
-                  <label className="muted small mt-2">Minimum Rating</label>
-                  <select 
-                    className="form-control" 
-                    value={minRating} 
-                    onChange={(e)=>{ setMinRating(Number(e.target.value)); setPage(1)}}
-                  >
-                    <option value={0}>Any</option>
-                    <option value={4}>≥ 4.0</option>
-                    <option value={4.5}>≥ 4.5</option>
-                    <option value={4.8}>≥ 4.8</option>
-                  </select>
-
-                  <div style={{display:'flex', gap:8, marginTop:12}}>
-                    <button className="btn btn-ghost" onClick={()=>{
-                      setAvailability('All')
-                      setMinRating(0)
-                      setPage(1)
-                      setFiltersOpen(false)
-                    }}>Reset</button>
-
-                    <button className="btn primary-cta" onClick={()=>{
-                      setFiltersOpen(false)
-                      setPage(1)
-                    }}>Apply</button>
-                  </div>
+                  <button className="btn primary-cta" onClick={()=>{
+                    setFiltersOpen(false)
+                    setPage(1)
+                  }}>Apply</button>
                 </div>
               </div>
-
-              <div className="sort-by">Sort by:
-                <select value={sortBy} onChange={(e)=> setSortBy(e.target.value)}>
-                  <option>Popular</option>
-                  <option>Newest</option>
-                </select>
-              </div>
-
             </div>
           </div>
+        </div>
+
+        {/* BOTTOM ROW: CATEGORY CHIPS */}
+        <div className="filter-chips">
+          {CATEGORIES.map(cat => (
+            <button 
+              key={cat} 
+              className={`chip ${category===cat? 'active':''}`} 
+              onClick={()=>{ setCategory(cat); setPage(1)}}
+            >{cat}</button>
+          ))}
         </div>
       </div>
 
@@ -283,13 +271,13 @@ export default function Library() {
             <div className="card-body p-3">
               <div className="chip small">{b.category}</div>
               <h4>{b.title}</h4>
-              <div className="meta small">{b.author} • {b.year}</div>
+              <div className="meta small">{b.author}{b.year > 0 ? ` • ${b.year}` : ''}</div>
               <p className="desc">{b.summary}</p>
 
               <div className="meta-row">
-                <span>⭐ {b.rating}</span>
-                <span>{b.pages}p</span>
-                <span>{b.reads.toLocaleString()}</span>
+                {b.rating > 0 && <span>⭐ {b.rating}</span>}
+                {b.pages > 0 && <span>{b.pages}p</span>}
+                {b.reads > 0 && <span>{b.reads.toLocaleString()}</span>}
               </div>
 
               <div className="card-footer">
@@ -305,23 +293,6 @@ export default function Library() {
                     >
                       Borrow Now
                     </button>
-
-                    <button 
-                      className="btn btn-ghost btn-block mt-2"
-                      onClick={async ()=>{
-                        const comment = prompt('Write a review (optional):')
-                        if (comment?.trim()) {
-                          try {
-                            await createReview(b.id, { comment, rating: 5 })
-                            alert('Review submitted!')
-                          } catch {
-                            alert('Failed to submit review')
-                          }
-                        }
-                      }}
-                    >
-                      Write Review
-                    </button>
                   </>
                 ) : (
                   <>
@@ -331,22 +302,6 @@ export default function Library() {
                       style={{opacity: 0.6, cursor: 'not-allowed'}}
                     >
                       Currently Borrowed
-                    </button>
-                    <button 
-                      className="btn btn-ghost btn-block mt-2"
-                      onClick={async ()=>{
-                        const comment = prompt('Write a review (optional):')
-                        if (comment?.trim()) {
-                          try {
-                            await createReview(b.id, { comment, rating: 5 })
-                            alert('Review submitted!')
-                          } catch {
-                            alert('Failed to submit review')
-                          }
-                        }
-                      }}
-                    >
-                      Write Review
                     </button>
                   </>
                 )}
