@@ -162,24 +162,12 @@ export default function PetugasPage() {
 
         if (gambarPreview.startsWith('blob:')) URL.revokeObjectURL(gambarPreview);
 
+        // Simpan file di state, upload nanti saat simpan buku
         setGambarFile(file);
         setGambarPreview(URL.createObjectURL(file));
-        setForm(prev => ({ ...prev, gambar_sampul: '' }));
-
-        const formData = new FormData();
-        formData.append('gambar_sampul', file);
-        if (isEditMode && currentBookId) formData.append('id_buku', currentBookId);
-
-        try {
-            const res = await createBook(formData); // bisa diganti endpoint khusus upload
-            if (res.data?.gambar_sampul) {
-                setForm(prev => ({ ...prev, gambar_sampul: res.data.gambar_sampul }));
-                setGambarPreview(res.data.gambar_sampul);
-                alert('Gambar berhasil diupload!');
-            }
-        } catch (err) {
-            console.error('Gagal upload gambar:', err);
-            alert('Gagal upload gambar: ' + (err?.response?.data?.message || err.message));
+        // Jangan reset gambar_sampul jika edit mode (biar tetap ada URL lama sebagai fallback)
+        if (!isEditMode) {
+            setForm(prev => ({ ...prev, gambar_sampul: '' }));
         }
     }
 

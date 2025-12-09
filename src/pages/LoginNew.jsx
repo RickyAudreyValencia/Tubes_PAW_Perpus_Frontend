@@ -105,11 +105,6 @@ export default function LoginNew(){
               <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} disabled={loading} className={errors.password? 'is-invalid':''}/>
               {errors.password && <div className="invalid-feedback">{errors.password}</div>}
             </div>
-            <div className="input-field" style={{display:'flex', gap: 10, alignItems: 'center'}}>
-              <label style={{display:'flex', gap: 8, alignItems:'center'}}>
-                <input type="checkbox" checked={remember} onChange={(e)=>setRemember(e.target.checked)} /> Remember me
-              </label>
-            </div>
             <button className="library-btn login-cta" type="submit" disabled={loading}>{loading ? 'Logging in...' : 'Masuk'}</button>
             <div style={{marginTop: 12}}>Belum punya akun? <Link to="/register">Daftar</Link></div>
           </form>

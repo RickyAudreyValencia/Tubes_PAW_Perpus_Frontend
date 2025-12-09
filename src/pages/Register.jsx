@@ -43,26 +43,12 @@ export default function Register() {
 
     try {
       // 1. Panggil API Register
-      // Sesuaikan parameter fungsi register di bawah ini dengan kebutuhan API Anda.
       const response = await register(name, email, password, confirmPassword) 
 
-      // 2. Ambil Token (jika API register langsung mengembalikan token/langsung login)
-      const token = response.token || response.access_token 
-      const role = response.role || response.user?.role || response.data?.role
-
-      if (token) {
-        // 3. Simpan token dan atur header Axios (Asumsi: registrasi otomatis login)
-        const user = response.user || response.data?.user || response.data
-        await setCredentials({ token, role, user, remember: false })
-        setAuthToken(token)
-        // NAVIGASI KE HALAMAN YANG SESUAI BERDASARKAN ROLE
-        if (role === 'petugas') navigate('/petugas/dashboard')
-        else navigate('/anggota/dashboard')
-      } else {
-        // Jika API register tidak mengembalikan token, mungkin perlu navigasi ke halaman login
-        alert('Registrasi berhasil. Silakan login.')
-        navigate('/login') 
-      }
+      // 2. Registrasi berhasil - arahkan ke halaman login
+      // Backend tidak mengembalikan token saat registrasi, user harus login manual
+      alert('Registrasi berhasil! Silakan login dengan akun Anda.')
+      navigate('/login')
 
     } catch (err) {
       console.error('Registrasi Gagal:', err)
@@ -201,7 +187,7 @@ export default function Register() {
                 {isSubmitting ? 'Registering...' : 'Register →'}
             </button>
 
-            {import.meta.env.DEV && (
+            {/* {import.meta.env.DEV && (
               <div style={{marginTop: 12, padding: 12, borderRadius: 8, background: 'rgba(0,0,0,0.04)', fontSize: 13}}>
                 <strong>Developer hint</strong>: If the backend returns a `role` property in the registration response, the frontend will store it for auto-routing.
                 <div style={{marginTop:8, fontSize: 12}}>
@@ -214,7 +200,7 @@ export default function Register() {
                 </div>
                 <div style={{marginTop:8, color:'rgba(0,0,0,0.6)'}}>The frontend reads `response.role` or `response.user?.role` and saves it in <code>sessionStorage</code> under `user_role`.</div>
               </div>
-            )}
+            )} */}
 
             <div className="signup-note">Already have an account? <Link to="/login">Login here</Link></div>
 

@@ -118,15 +118,6 @@ export default function Login() {
               )}
             </div>
 
-            <label style={{ display: "flex", gap: 8, marginTop: 8 }}>
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-              />
-              Remember me
-            </label>
-
             <button
               className="login-cta"
               type="submit"
