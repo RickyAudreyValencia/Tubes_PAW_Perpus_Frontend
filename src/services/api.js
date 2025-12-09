@@ -143,16 +143,36 @@ export const acceptLoan = async (loanId) => {
 }
 
 export const rejectLoan = async (loanId) => {
-    try {
-        const res = await api.post(`/peminjaman/${loanId}/reject`)
-        return res.data
-    } catch (e) {
-        if (e.response?.status === 404) {
-            const res = await api.post(`/pinjam/${loanId}/reject`)
+    const endpoints = [
+        { method: 'post', url: `/peminjaman/${loanId}/reject` },
+        { method: 'put', url: `/peminjaman/${loanId}/reject` },
+        { method: 'delete', url: `/peminjaman/${loanId}` },
+        { method: 'post', url: `/peminjaman/reject/${loanId}` },
+        { method: 'delete', url: `/peminjaman/delete/${loanId}` },
+    ]
+    
+    let lastError = null
+    
+    for (const endpoint of endpoints) {
+        try {
+            let res
+            if (endpoint.method === 'post') {
+                res = await api.post(endpoint.url)
+            } else if (endpoint.method === 'put') {
+                res = await api.put(endpoint.url)
+            } else if (endpoint.method === 'delete') {
+                res = await api.delete(endpoint.url)
+            }
+            console.log(`✓ Reject loan via ${endpoint.method.toUpperCase()} ${endpoint.url}`)
             return res.data
+        } catch (e) {
+            lastError = e
+            console.warn(`✗ Failed ${endpoint.method.toUpperCase()} ${endpoint.url}: ${e.response?.status || e.message}`)
+            continue
         }
-        throw e
     }
+    
+    throw lastError
 }
 
 export const addFineToLoan = async (loanId, amount) => {

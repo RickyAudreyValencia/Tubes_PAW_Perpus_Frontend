@@ -110,9 +110,54 @@ export default function ManageLoans() {
     }
   }
 
-  async function handleReject(loan) { try { await rejectLoan(loan.id); alert('Loan rejected') } catch (err) { alert('Failed to reject') } }
+  async function handleReject(loan) {
+    const loanId = loan.id_peminjaman || loan.id
+    
+    if (!loanId) {
+      alert('Tidak dapat menemukan ID peminjaman')
+      return
+    }
+    
+    if (!window.confirm('Apakah Anda yakin ingin menolak peminjaman ini?')) {
+      return
+    }
+    
+    try {
+      await rejectLoan(loanId)
+      alert('Peminjaman berhasil ditolak')
+      
+      // Update local state - remove rejected loan
+      setLoans(prevLoans => prevLoans.filter(l => (l.id_peminjaman || l.id) !== loanId))
+    } catch (err) {
+      console.error('Error rejecting loan:', err)
+      alert('Gagal menolak peminjaman: ' + (err.message || 'Terjadi kesalahan'))
+    }
+  }
 
-  async function handleAddFine(loan) { const amount = prompt('Nominal denda (IDR)'); if (!amount) return; try { await addFineToLoan(loan.id, amount); alert('Fine added') } catch (err) { alert('Failed') } }
+  async function handleAddFine(loan) {
+    const loanId = loan.id_peminjaman || loan.id
+    
+    if (!loanId) {
+      alert('Tidak dapat menemukan ID peminjaman')
+      return
+    }
+    
+    const amount = prompt('Nominal denda (IDR)')
+    if (!amount) return
+    
+    try {
+      await addFineToLoan(loanId, amount)
+      alert('Denda berhasil ditambahkan')
+      
+      // Refresh loans
+      const res = await getLoans()
+      const raw = Array.isArray(res) ? res : res.data || []
+      setLoans(raw)
+    } catch (err) {
+      console.error('Error adding fine:', err)
+      alert('Gagal menambahkan denda: ' + (err.message || 'Terjadi kesalahan'))
+    }
+  }
 
   return (
     <div className="container mt-4">
